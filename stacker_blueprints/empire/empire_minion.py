@@ -190,7 +190,7 @@ class EmpireMinion(EmpireBase):
                 Path="/",
                 Roles=[Ref("EmpireMinionRole")]))
         t.add_output(
-            Output("EmpireMinionRole", Value=Ref("EmpireMinionRole")))
+            Output("IAMRole", Value=Ref("EmpireMinionRole")))
 
     def create_ecs_cluster(self):
         t = self.template
