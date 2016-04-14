@@ -211,7 +211,7 @@ class BaseReplicationGroup(Blueprint):
             Not(Equals(Ref("SnapshotWindow"), "")))
         t.add_condition(
             "DefinedSnapshotRetentionLimit",
-            Not(Equals(Ref("SnapshotRetentionLimit"), "")))
+            Not(Equals(Ref("SnapshotRetentionLimit"), "0")))
 
         # DNS Conditions
         t.add_condition(
