@@ -1,7 +1,6 @@
-## 0.6.3 (2016-05-16)
+## current (2016-03-15)
 
 - Add support for ACM certificates
-- Add new RDS db versions
 
 ## 0.6.2 (2016-02-11)
 
