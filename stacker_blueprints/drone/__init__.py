@@ -128,7 +128,7 @@ class Drone(Blueprint):
         'MaxCapacity': {
             'type': 'Number',
             'description': 'Maximum number of EC2 instances in the auto scaling group',
-            'default': '1',
+            'default': '2',
         },
         'DesiredCapacity': {
             'type': 'Number',
