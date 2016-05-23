@@ -12,6 +12,7 @@ from troposphere import (
     If,
     Join,
     Not,
+    Or,
     Output,
     Ref,
 )
