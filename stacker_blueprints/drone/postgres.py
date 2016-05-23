@@ -70,15 +70,16 @@ class Drone(Base):
             '@', Ref('DatabaseHost'), ':', Ref('DatabasePort')
         ]
         if with_table:
-            content.extend(['/', Ref('DatabaseTable')])
+            content.extend(['/', Ref('DatabaseName')])
         return Join('', content)
 
     def _generate_create_statement(self):
-        return [
-            '-tc "SELECT 1 FROM pg_database WHERE datname = \'', Ref('DatabaseTable'),
+        statement = [
+            '-tc "SELECT 1 FROM pg_database WHERE datname = \'', Ref('DatabaseName'),
             '\'" | grep -q 1 || psql ', self._get_database_url(),
-            ' -c "CREATE DATABASE ', Ref('DatabaseTable'), '"',
+            ' -c "CREATE DATABASE ', Ref('DatabaseName'), '"',
         ]
+        return Join('', statement)
 
     def generate_user_data_content(self):
         content = super(Drone, self).generate_user_data_content()
