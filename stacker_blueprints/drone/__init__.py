@@ -29,13 +29,15 @@ from troposphere.policies import (
 )
 from troposphere.route53 import RecordSetType
 
-from .constants import ALLOWED_INSTANCE_TYPES
+from ..constants import ALLOWED_INSTANCE_TYPES
 
 CLUSTER_SG_NAME = 'DroneSecurityGroup'
 DRONE_INSTANCE_PROFILE = 'DroneProfile'
 ELB_SG_NAME = 'DroneELBSecurityGroup'
 LAUNCH_CONFIGURATION = 'DroneLaunchConfiguration'
 LOAD_BALANCER = 'LoadBalancer'
+
+NO_DATABASE_CONFIG = 'NoDatabaseConfig'
 
 
 class Drone(Blueprint):
@@ -206,7 +208,7 @@ class Drone(Blueprint):
             Equals(Ref('DatabaseDriver'), ''),
         )
         t.add_condition(
-            'NoDatabaseConfig',
+            NO_DATABASE_CONFIG,
             Equals(Ref('DatabaseConfig'), ''),
         )
         t.add_condition(
@@ -248,7 +250,7 @@ class Drone(Blueprint):
         ]
         return Join('', parts)
 
-    def _get_dronerc_content(self):
+    def get_dronerc_content(self):
         content = [
             'REMOTE_DRIVER=', Ref('RemoteDriver'), '\n',
             'REMOTE_CONFIG=', Ref('RemoteConfig'), '\n',
@@ -286,7 +288,7 @@ class Drone(Blueprint):
             'config': cf.InitConfig(
                 files=cf.InitFiles({
                     '/etc/drone/dronerc': cf.InitFile(
-                        content=Join('', self._get_dronerc_content()),
+                        content=Join('', self.get_dronerc_content()),
                         mode='000644',
                         owner='root',
                         group='root',
