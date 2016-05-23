@@ -12,6 +12,7 @@ from troposphere import (
     If,
     Join,
     Not,
+    Output,
     Ref,
 )
 from troposphere.autoscaling import (
@@ -396,6 +397,7 @@ class Drone(Blueprint):
                 Roles=[Ref('DroneRole')],
             ),
         )
+        t.add_output(Output('IAMRole', Value=Ref('DroneRole')))
 
     def create_autoscaling_group(self):
         t = self.template
