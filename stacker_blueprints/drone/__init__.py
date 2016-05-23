@@ -259,6 +259,7 @@ class Drone(Blueprint):
             If('NoDatabaseDriver', '', Join('', ['DATABASE_DRIVER=', Ref('DatabaseDriver'), '\n'])),
             If('NoDatabaseConfig', '', Join('', ['DATABASE_CONFIG=', Ref('DatabaseConfig'), '\n'])),
             If('NoPluginFilter', '', Join('', ['PLUGIN_FILTER=', Ref('PluginFilter'), '\n'])),
+            If('NoPluginParams', '', Join('', ['PLUGIN_PARAMS=', Ref('PluginParams'), '\n'])),
             If('NoDebug', '', Join('', ['DEBUG=', Ref('Debug'), '\n'])),
         ]
         return content
