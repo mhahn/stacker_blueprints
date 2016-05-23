@@ -222,7 +222,7 @@ class Drone(Blueprint):
         )
         t.add_condition(
             'NoDebug',
-            Equals(Ref('Debug'), ''),
+            Or(Equals(Ref('Debug'), ''), Equals(Ref('Debug'), 'false')),
         )
 
     def _setup_listeners(self):
