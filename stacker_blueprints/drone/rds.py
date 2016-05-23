@@ -38,7 +38,7 @@ PARAMETERS['DatabasePassword'] = {
 PARAMETERS['DatabasePort'] = {
     'type': 'String',
     'description': 'Port for the database',
-    'default': '5342',
+    'default': '5432',
 }
 PARAMETERS['DatabaseTable'] = {
     'type': 'String',
