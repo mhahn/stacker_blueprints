@@ -272,16 +272,20 @@ class Drone(Blueprint):
         ]
         return content
 
-    def _generate_user_data(self):
+    def generate_user_data_content(self):
         content = [
-            '#!/bin/bash\n',
+            '#!/bin/bash', '\n',
             # NB: cfn-init can use the logical id instead of the physical id
             'cfn-init -s ', Ref('AWS::StackName'), ' -r ', LAUNCH_CONFIGURATION,
             ' --region ', Ref('AWS::Region'), '\n',
-            'docker create --name data -v /var/lib/drone:/var/lib/drone:ro ubuntu:14.04\n',
-            '/etc/init.d/datadog-agent start\n',
-            'echo ', Ref('Version'),
+            'docker create --name data -v /var/lib/drone:/var/lib/drone:ro ubuntu:14.04', '\n',
+            '/etc/init.d/datadog-agent start', '\n',
         ]
+        return content
+
+    def generate_user_data(self):
+        content = self.generate_user_data_content()
+        content.extend(['echo version:', Ref('Version'), '\n'])
         return Base64(Join('', content))
 
     def _get_cloudformation_init(self):
@@ -408,7 +412,7 @@ class Drone(Blueprint):
                 ImageId=FindInMap('AmiMap', Ref('AWS::Region'), Ref('ImageName')),
                 InstanceType=Ref('InstanceType'),
                 KeyName=Ref('SshKeyName'),
-                UserData=self._generate_user_data(),
+                UserData=self.generate_user_data(),
                 SecurityGroups=[Ref('DefaultSG'), Ref(CLUSTER_SG_NAME)],
                 EbsOptimized=Ref('EbsOptimized'),
                 Metadata=Metadata(self._get_cloudformation_init()),
