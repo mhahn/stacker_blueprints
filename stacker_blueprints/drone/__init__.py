@@ -285,7 +285,7 @@ class Drone(Blueprint):
 
     def generate_user_data(self):
         content = self.generate_user_data_content()
-        content.extend(['echo version:', Ref('Version'), '\n'])
+        content.extend(['echo version: ', Ref('Version'), '\n'])
         return Base64(Join('', content))
 
     def _get_cloudformation_init(self):

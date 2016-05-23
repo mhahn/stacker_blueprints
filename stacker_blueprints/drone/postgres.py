@@ -75,9 +75,9 @@ class Drone(Base):
 
     def _generate_create_statement(self):
         statement = [
-            '-tc "SELECT 1 FROM pg_database WHERE datname = \'', Ref('DatabaseName'),
-            '\'" | grep -q 1 || psql ', self._get_database_url(),
-            ' -c "CREATE DATABASE ', Ref('DatabaseName'), '"',
+            ' -tc \\"SELECT 1 FROM pg_database WHERE datname = \'', Ref('DatabaseName'),
+            '\'\\" | grep -q 1 || psql ', self._get_database_url(),
+            ' -c \\"CREATE DATABASE ', Ref('DatabaseName'), '\\"',
         ]
         return Join('', statement)
 
@@ -85,8 +85,8 @@ class Drone(Base):
         content = super(Drone, self).generate_user_data_content()
         if self.local_parameters['CreateDatabase']:
             content.extend([
-                'docker run --rm postgres:9.4 psql ', self._get_database_url(),
-                self._generate_create_statement(), '\n',
+                'docker run --rm postgres:9.4 bash -c "psql ', self._get_database_url(),
+                self._generate_create_statement(), '"', '\n',
             ])
         return content
 
