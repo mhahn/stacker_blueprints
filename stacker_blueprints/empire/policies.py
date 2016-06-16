@@ -2,10 +2,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from awacs.aws import Statement, Allow, Policy, Action
+from awacs.aws import Statement, Allow, Policy, Action, Principal, Condition, SourceArn, ArnEquals
 
-from awacs import ecs, ec2, iam, route53, kinesis, sns
+from awacs import (
+    ecs, ec2, iam, route53, kinesis, sns, logs, sqs, s3, cloudformation
+)
 from awacs import elasticloadbalancing as elb
+
+from troposphere import Ref, Join
 
 
 def ecs_agent_policy():
@@ -41,9 +45,42 @@ def service_role_policy():
     return p
 
 
-def empire_policy():
+def empire_policy(resources):
     p = Policy(
         Statement=[
+            Statement(
+                Effect=Allow,
+                Resource=[resources['CustomResourcesTopic']],
+                Action=[sns.Publish]),
+            Statement(
+                Effect=Allow,
+                Resource=[resources['CustomResourcesQueue']],
+                Action=[sqs.ReceiveMessage, sqs.DeleteMessage]),
+            Statement(
+                Effect=Allow,
+                Resource=[resources['TemplateBucket']],
+                Action=[
+                    s3.PutObject,
+                    s3.PutObjectAcl,
+                    s3.PutObjectVersionAcl,
+                    s3.GetObject,
+                    s3.GetObjectVersion,
+                    s3.GetObjectAcl,
+                    s3.GetObjectVersionAcl]),
+            Statement(
+                Effect=Allow,
+                Resource=[Join('', ['arn:aws:cloudformation:', Ref('AWS::Region'), ':', Ref('AWS::AccountId'), ':stack/', resources['Environment'], '-*'])],
+                Action=[
+                    cloudformation.CreateStack,
+                    cloudformation.UpdateStack,
+                    cloudformation.DeleteStack,
+                    cloudformation.ListStackResources,
+                    cloudformation.DescribeStackResource,
+                    cloudformation.DescribeStacks]),
+            Statement(
+                Effect=Allow,
+                Resource=['*'],
+                Action=[cloudformation.ValidateTemplate]),
             Statement(
                 Effect=Allow,
                 Resource=["*"],
@@ -60,7 +97,9 @@ def empire_policy():
                 Action=[elb.DeleteLoadBalancer, elb.CreateLoadBalancer,
                         elb.DescribeLoadBalancers, elb.DescribeTags,
                         elb.ConfigureHealthCheck,
-                        elb.ModifyLoadBalancerAttributes]),
+                        elb.ModifyLoadBalancerAttributes,
+                        elb.SetLoadBalancerListenerSSLCertificate,
+                        elb.SetLoadBalancerPoliciesOfListener]),
             Statement(
                 Effect=Allow,
                 Resource=["*"],
@@ -75,7 +114,9 @@ def empire_policy():
                 Action=[
                     Action("route53", "ListHostedZonesByName"),
                     route53.ChangeResourceRecordSets,
-                    route53.ListHostedZones, route53.GetHostedZone
+                    route53.ListHostedZones,
+                    route53.GetHostedZone,
+                    route53.GetChange,
                 ],
                 # TODO: Limit to specific zones
                 Resource=["*"]),
@@ -87,6 +128,12 @@ def empire_policy():
                     Action(kinesis.prefix, "List*")
                 ],
                 Resource=["*"]),
+            Statement(
+                Effect=Allow,
+                Action=[
+                    sns.Publish,
+                ],
+                Resource=[resources['EventsTopic']])
         ]
     )
     return p
@@ -120,4 +167,34 @@ def logstream_policy():
                 ])
         ]
     )
+    return p
+
+
+def runlogs_policy(log_group):
+    """Policy needed for Empire -> Cloudwatch logs to record interactive runs."""
+    p = Policy(
+        Statement=[
+            Statement(
+                Effect=Allow,
+                Resource=[
+                    Join('', ['arn:aws:logs:*:*:log-group:', Ref(log_group), ':log-stream:*'])
+                ],
+                Action=[
+                    logs.CreateLogStream,
+                    logs.PutLogEvents,
+                ])
+        ]
+    )
+    return p
+
+
+def sns_to_sqs_policy(topic):
+    p = Policy(
+        Statement=[
+            Statement(
+                Effect=Allow,
+                Principal=Principal('*'),
+                Action=[sqs.SendMessage],
+                Resource=["*"],
+                Condition=Condition(ArnEquals(SourceArn, topic)))])
     return p

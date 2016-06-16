@@ -34,11 +34,11 @@ class EmpireMinion(EmpireBase):
             "type": "String",
             "description": "Empire AWS Instance Type",
             "default": "c4.2xlarge"},
-        "MinSize": {
+        "MinHosts": {
             "type": "Number",
             "description": "Minimum # of empire minion instances.",
             "default": "3"},
-        "MaxSize": {
+        "MaxHosts": {
             "type": "Number",
             "description": "Maximum # of empire minion instances.",
             "default": "20"},
@@ -159,16 +159,15 @@ class EmpireMinion(EmpireBase):
         return [docker_volume, swap_volume]
 
     def generate_iam_policies(self):
-        ns = self.context.namespace
         base_policies = [
             Policy(
-                PolicyName="%s-ecs-agent" % ns,
+                PolicyName="ecs-agent",
                 PolicyDocument=ecs_agent_policy()),
         ]
         with_logging = copy.deepcopy(base_policies)
         with_logging.append(
             Policy(
-                PolicyName="%s-kinesis-logging" % ns,
+                PolicyName="logstream",
                 PolicyDocument=logstream_policy()
             )
         )
@@ -206,9 +205,7 @@ class EmpireMinion(EmpireBase):
             "DOCKER_USER=", Ref("DockerRegistryUser"), "\n",
             "DOCKER_PASS=", Ref("DockerRegistryPassword"), "\n",
             "DOCKER_EMAIL=", Ref("DockerRegistryEmail"), "\n",
-            "ENABLE_STREAMING_LOGS=", If("EnableStreamingLogs",
-                                         "true", "false"), "\n"
-            ]
+        ]
         return seed
 
     def create_autoscaling_group(self):
@@ -231,7 +228,7 @@ class EmpireMinion(EmpireBase):
                 'EmpireMinionAutoscalingGroup',
                 AvailabilityZones=Ref("AvailabilityZones"),
                 LaunchConfigurationName=Ref("EmpireMinionLaunchConfig"),
-                MinSize=Ref("MinSize"),
-                MaxSize=Ref("MaxSize"),
+                MinSize=Ref("MinHosts"),
+                MaxSize=Ref("MaxHosts"),
                 VPCZoneIdentifier=Ref("PrivateSubnets"),
                 Tags=[ASTag('Name', 'empire_minion', True)]))
