@@ -76,15 +76,15 @@ class EmpireDaemon(Blueprint):
         "ELBCertName": {
             "type": "String",
             "description": (
-                "The SSL certificate name to use on the ELB. Note: If this is"
-                " set, non-HTTPS access is disabled."
+                "The SSL certificate name to use on the ELB. Note: If this is "
+                "set, non-HTTPS access is disabled."
             ),
             "default": ""},
         "ELBCertType": {
             "type": "String",
             "description": (
-                "The SSL certificate type to use on the ELB. Note: Can be"
-                " either acm or iam."
+                "The SSL certificate type to use on the ELB. Note: Can be "
+                "either acm or iam."
             ),
             "default": ""},
         "DesiredCount": {
@@ -145,6 +145,7 @@ class EmpireDaemon(Blueprint):
         "Reporter": {
             "type": "String",
             "description": "The reporter to use to report errors",
+            "allowed_values": ["hb"],
             "default": ""},
         "InternalZoneId": {
             "type": "String",
@@ -184,46 +185,51 @@ class EmpireDaemon(Blueprint):
             "type": "String",
             "allowed_values": ["sns", "stdout", ""],
             "description": (
-                "The backend to use for empire events. If 'sns' is specified,"
-                " provide EventsSNSTopicName to use a specific topic, or else"
-                " one will be created for you."
+                "The backend to use for empire events. If 'sns' is specified, "
+                "provide EventsSNSTopicName to use a specific topic, or else "
+                "one will be created for you."
             ),
             "default": "stdout"},
         "EventsSNSTopicName": {
             "type": "String",
             "description": (
-                "The SNS topic to use if the 'EventsBackend' is set to 'sns'."
-                " If not provided, one will be created for the sns backend."
+                "The SNS topic to use if the 'EventsBackend' is set to 'sns'. "
+                "If not provided, one will be created for the sns backend."
             ),
             "default": ""},
         "TaskMemory": {
             "type": "Number",
-            "description": "The number of MiB to reserve for the task.",
+            "description": (
+                "The number of MiB to reserve for the empire daemon task."
+            ),
             "default": "1024"},
         "AwsDebug": {
             "type": "String",
             "description": (
                 "Boolean for whether or not to enable AWS debug logs."
             ),
+            "allowed_values": ["true", "false"],
             "default": "false"},
         "TaskCPU": {
             "type": "Number",
-            "description": "The number of CPU units to reserve for the task.",
+            "description": (
+                "The number of CPU units to reserve for the empire daemon task."
+            ),
             "default": "1024"},
         "ServiceMaximumPercent": {
             "type": "Number",
             "description": (
-                "The maximum number of tasks, specified as a percentage of the"
-                " Amazon ECS service's DesiredCount value, that can run in a"
-                " service during a deployment."
+                "The maximum number of tasks, specified as a percentage of the "
+                "Amazon ECS service's DesiredCount value, that can run in a "
+                "service during a deployment."
             ),
             "default": "200"},
         "ServiceMinimumHealthyPercent": {
             "type": "Number",
             "description": (
-                "The minimum number of tasks, specified as a percentage of the"
-                " Amazon ECS service's DesiredCount value, that must continue"
-                " to run and remain healthy during a deployment."
+                "The minimum number of tasks, specified as a percentage of the "
+                "Amazon ECS service's DesiredCount value, that must continue "
+                "to run and remain healthy during a deployment."
             ),
             "default": "50"}
     }
@@ -241,6 +247,7 @@ class EmpireDaemon(Blueprint):
         t = self.template
         ssl_condition = Not(Equals(Ref("ELBCertName"), ""))
         t.add_condition("UseSSL", ssl_condition)
+        t.add_condition("UseHTTP", Not(ssl_condition))
         self.template.add_condition(
             "UseIAMCert",
             Not(Equals(Ref("ELBCertType"), "acm")))
@@ -275,18 +282,21 @@ class EmpireDaemon(Blueprint):
                 "ELBPort80FromTrustedNetwork",
                 IpProtocol="tcp", FromPort="80", ToPort="80",
                 CidrIp=Ref("TrustedNetwork"),
+                Condition="UseHTTP",
                 GroupId=Ref(ELB_SG_NAME)))
         t.add_resource(
             ec2.SecurityGroupIngress(
                 "ELBPort443FromTrustedNetwork",
                 IpProtocol="tcp", FromPort="443", ToPort="443",
                 CidrIp=Ref("TrustedNetwork"),
+                Condition="UseSSL",
                 GroupId=Ref(ELB_SG_NAME)))
         t.add_resource(
             ec2.SecurityGroupIngress(
                 "ELBPort443GitHub",
                 IpProtocol="tcp", FromPort="443", ToPort="443",
                 CidrIp=Ref("GitHubCIDR"),
+                Condition="UseSSL",
                 GroupId=Ref(ELB_SG_NAME)))
         t.add_resource(
             ec2.SecurityGroupIngress(
