@@ -20,12 +20,21 @@ from troposphere import (
 
 from troposphere import elasticloadbalancing as elb
 from troposphere.route53 import RecordSetType
-from troposphere.iam import PolicyType
+from troposphere.iam import (
+    PolicyType,
+    Policy,
+    Role,
+)
+
+from awacs.helpers.trust import (
+    get_ecs_assumerole_policy,
+)
 
 from stacker.blueprints.base import Blueprint
 
 from .policies import (
     empire_policy,
+    service_role_policy,
     sns_to_sqs_policy,
     sns_events_policy,
     runlogs_policy,
@@ -100,7 +109,7 @@ class EmpireDaemon(Blueprint):
         "DockerImage": {
             "type": "String",
             "description": "The docker image to run for the Empire dameon",
-            "default": "master"},
+            "default": "remind101/empire:master"},
         "Environment": {
             "type": "String",
             "description": "Environment used for Empire."},
@@ -366,6 +375,8 @@ class EmpireDaemon(Blueprint):
                     UnhealthyThreshold=3,
                     Interval=5,
                     Timeout=3),
+                ConnectionSettings=elb.ConnectionSettings(
+                    IdleTimeout=3600),  # 1 hour
                 Listeners=self.setup_listeners(),
                 SecurityGroups=[Ref(ELB_SG_NAME), ],
                 Subnets=Ref("PublicSubnets")))
@@ -450,7 +461,7 @@ class EmpireDaemon(Blueprint):
                 Value=Ref("MinionCluster")),
             ecs.Environment(
                 Name="EMPIRE_ECS_SERVICE_ROLE",
-                Value="ecsServiceRole"),
+                Value=Ref("ServiceRole")),
             ecs.Environment(
                 Name="EMPIRE_ROUTE53_INTERNAL_ZONE_ID",
                 Value=Ref("InternalZoneId")),
@@ -588,6 +599,16 @@ class EmpireDaemon(Blueprint):
                         Memory=Ref("TaskMemory"))]))
 
         t.add_resource(
+            Role(
+                "ServiceRole",
+                AssumeRolePolicyDocument=get_ecs_assumerole_policy(),
+                Path="/",
+                Policies=[
+                    Policy(
+                        PolicyName="ecs-service-role",
+                        PolicyDocument=service_role_policy())]))
+
+        t.add_resource(
             ecs.Service(
                 "Service",
                 Cluster=Ref("ControllerCluster"),
@@ -601,7 +622,7 @@ class EmpireDaemon(Blueprint):
                         ContainerName="empire",
                         ContainerPort=8081,
                         LoadBalancerName=Ref("LoadBalancer"))],
-                Role="ecsServiceRole",
+                Role=Ref("ServiceRole"),
                 TaskDefinition=Ref("TaskDefinition")))
 
     def create_log_group(self):
