@@ -333,6 +333,10 @@ class EmpireDaemon(Blueprint):
         t.add_resource(queue)
         t.add_resource(topic)
         t.add_resource(queue_policy)
+        t.add_output(
+            Output(
+                "CustomResourcesTopic",
+                Value=Ref(topic)))
 
     def create_template_bucket(self):
         t = self.template

@@ -180,3 +180,9 @@ stacks:
       GithubWebhooksSecret: ${empire_controller_github_webhooks_secret}
       GithubDeploymentsEnvironment: ${empire_controller_github_deployments_environment}
       TokenSecret: ${empire_controller_token_secret}
+      DockerImage: mhahn/empire:b7c43199429f2567741684be52a5701f56f20d56
+  - name: acmeApp
+    class_path: stacker_blueprints.empire.app.App
+    parameters:
+      ServiceToken: empireDaemon::CustomResourcesTopic
+      Name: "acme-inc"
