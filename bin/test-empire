@@ -6,10 +6,11 @@
 # have an example.env file with placeholders and comments that will be filled
 # in with the developer's values.
 
-CMD="stacker $1 conf/empire/example.env conf/empire/empire.yaml"
+CMD="stacker $1 conf/empire/example.env conf/empire/empire.yaml ${@:2}"
 while read -r line || [[ -n "$line" ]]
 do
     CMD="$CMD --env $line"
 done < "dev.env"
 
+echo $CMD
 $CMD
