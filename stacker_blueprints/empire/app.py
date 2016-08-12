@@ -1,5 +1,4 @@
 from stacker.blueprints.base import Blueprint
-from stacker.util import load_object_from_string
 from troposphere import (
     Output,
     Ref,
@@ -79,15 +78,6 @@ class AppEnvironment(Blueprint):
         params = self.get_parameters()
         variables = []
         for key, value in params["Variables"].iteritems():
-            if (
-                isinstance(value, dict) and
-                "kwargs" in value and
-                "resolve" in value
-            ):
-                kwargs = value["kwargs"]
-                resolve_path = value["resolve"]
-                resolve = load_object_from_string(resolve_path)
-                value = resolve(**kwargs)
             variables.append({"Name": key, "Value": value})
         return variables
 
