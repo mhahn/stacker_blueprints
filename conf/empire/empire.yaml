@@ -186,3 +186,19 @@ stacks:
     parameters:
       ServiceToken: empireDaemon::CustomResourcesTopic
       Name: "acme-inc"
+  - name: acmeAppEnvironment
+    class_path: stacker_blueprints.empire.app.AppEnvironment
+    parameters:
+      ServiceToken: empireDaemon::CustomResourcesTopic
+      AppId: acmeApp::AppId
+      Variables:
+        FOO: FOO
+        APP_ID: acmeApp::AppId
+        DATABASE_URL:
+          kwargs:
+            password: ${empiredb_password}
+            user: ${empiredb_user}
+            db_name: empire
+            host: empireDB::DBCname
+            provider: postgres
+          resolve: stacker_blueprints.empire.env.resolve_database_url
