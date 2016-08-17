@@ -228,13 +228,14 @@ class BaseReplicationGroup(Blueprint):
 
     def create_parameter_group(self):
         t = self.template
-        params = self.local_parameters["ClusterParameters"]
+        params = ["{}:{}".format(k, v) for k, v in
+                  self.local_parameters["ClusterParameters"].iteritems()]
         t.add_resource(
             ParameterGroup(
                 PARAMETER_GROUP,
                 Description=self.name,
                 CacheParameterGroupFamily=Ref("ParameterGroupFamily"),
-                Properties=params,
+                Properties=','.join(params),
             )
         )
 
