@@ -27,25 +27,26 @@ class CustomEmpireAppEnvironment(AWSCustomObject):
 
 class App(Blueprint):
 
-    PARAMETERS = {
+    VARIABLES = {
         "ServiceToken": {
-            "type": "String",
+            "type": str,
             "description": (
                 "An SNS Topic to fulfill the custom resource request."
             ),
         },
         "Name": {
-            "type": "String",
+            "type": str,
             "description": "The name of the app.",
         },
     }
 
     def create_template(self):
         t = self.template
+        variables = self.get_variables()
         app = CustomEmpireApp(
             "EmpireApp",
-            ServiceToken=Ref("ServiceToken"),
-            Name=Ref("Name"),
+            ServiceToken=variables["ServiceToken"],
+            Name=variables["Name"],
         )
         t.add_resource(app)
         t.add_output(Output("AppId", Value=Ref(app)))
@@ -53,7 +54,7 @@ class App(Blueprint):
 
 class AppEnvironment(Blueprint):
 
-    BLUEPRINT_PARAMETERS = {
+    VARIABLES = {
         "ServiceToken": {
             "type": str,
             "description": (
@@ -75,19 +76,19 @@ class AppEnvironment(Blueprint):
     }
 
     def _build_variables(self):
-        params = self.get_parameters()
-        variables = []
-        for key, value in params["Variables"].iteritems():
-            variables.append({"Name": key, "Value": value})
-        return variables
+        variables = self.get_variables()
+        v = []
+        for key, value in variables["Variables"].iteritems():
+            v.append({"Name": key, "Value": value})
+        return v
 
     def create_template(self):
         t = self.template
-        params = self.get_parameters()
+        variables = self.get_variables()
         app = CustomEmpireAppEnvironment(
             "EmpireAppEnvironment",
-            ServiceToken=params["ServiceToken"],
-            AppId=params["AppId"],
+            ServiceToken=variables["ServiceToken"],
+            AppId=variables["AppId"],
             Variables=self._build_variables(),
         )
         t.add_resource(app)

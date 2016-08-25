@@ -53,6 +53,11 @@ mappings:
       ubuntu1404: ami-47a23a30
       empire: ami-b6c258c5 # https://circleci.com/gh/remind101/empire_ami/89
 
+# An example of how to register custom lookups. This "custom" lookup is used
+# within the `acmeAppEnvironment` stack below.
+lookups:
+  custom: conf.empire.custom_lookup.handler
+
 # Many stacks need these settings, or a subset of them, from the VPC -
 # this makes it easy to pass them around. Stacker will drop unused Parameters
 # that are passed to a blueprint.
@@ -181,17 +186,22 @@ stacks:
       GithubDeploymentsEnvironment: ${empire_controller_github_deployments_environment}
       TokenSecret: ${empire_controller_token_secret}
       DockerImage: mhahn/empire:b7c43199429f2567741684be52a5701f56f20d56
+  # Create a simple app within empire named "acme-inc"
   - name: acmeApp
     class_path: stacker_blueprints.empire.app.App
-    parameters:
-      ServiceToken: empireDaemon::CustomResourcesTopic
+    variables:
+      ServiceToken: ${empireDaemon::CustomResourcesTopic}
       Name: "acme-inc"
+  # Register environment variables for the "acme-inc" app we created above
   - name: acmeAppEnvironment
     class_path: stacker_blueprints.empire.app.AppEnvironment
-    parameters:
-      ServiceToken: empireDaemon::CustomResourcesTopic
-      AppId: acmeApp::AppId
+    variables:
+      ServiceToken: ${empireDaemon::CustomResourcesTopic}
+      AppId: ${acmeApp::AppId}
       Variables:
         FOO: FOO
-        APP_ID: acmeApp::AppId
+        APP_ID: ${acmeApp::AppId}
+        # An example of how to use a mix of env variables and lookups to construct complex values
         DATABASE_URL: postgres://${empiredb_user}:${empiredb_password}@${empireDB::DBCname}/empire
+        # An example of how to use nested lookups
+        CUSTOM_LOOKUP: ${custom ${acmeApp::AppId}}
