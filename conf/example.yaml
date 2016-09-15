@@ -20,19 +20,19 @@ mappings:
       ubuntu1404: ami-5189a661
       bastion: ami-5189a661
 
-vpc_parameters: &vpc_parameters
-  VpcId: vpc::VpcId # parametrs with ::'s in them refer to <stack>::<Output>
-  DefaultSG: vpc::DefaultSG
-  PublicSubnets: vpc::PublicSubnets
-  PrivateSubnets: vpc::PrivateSubnets
-  AvailabilityZones: vpc::AvailabilityZones
+vpc_variables: &vpc_variables
+  VpcId: ${vpc::VpcId} # variables of the form `${<stack>::<Output>}` default to an `output` lookup, ie. `${output <stack>::<Output>}`
+  DefaultSG: ${vpc::DefaultSG}
+  PublicSubnets: ${vpc::PublicSubnets}
+  PrivateSubnets: ${vpc::PrivateSubnets}
+  AvailabilityZones: ${vpc::AvailabilityZones}
 
 stacks:
   - name: vpc
     class_path: stacker_blueprints.vpc.VPC
     # Flag to enable/disable a stack. Default is true
     enabled: true
-    parameters:
+    variables:
       InstanceType: m3.medium
       SshKeyName: default
       ImageName: NAT
@@ -52,14 +52,14 @@ stacks:
   - name: bastion
     class_path: stacker_blueprints.bastion.Bastion
     enabled: true
-    parameters:
-      # Extends the parameters dict with the contents of the vpc_parameters
-      # anchor. Basically we're including all VPC Outputs in the parameters
+    variables:
+      # Extends the variables dict with the contents of the vpc_variables
+      # anchor. Basically we're including all VPC Outputs in the variables
       # of the bastion stack. Note: Stacker figures out, automatically, which
-      # parameters the stack actually needs and only submits those to each
+      # variables the stack actually needs and only submits those to each
       # stack. For example, most stacks are in the PrivateSubnets, but not
       # the PublicSubnets, but stacker deals with it for you.
-      << : *vpc_parameters
+      << : *vpc_variables
       InstanceType: m3.medium
       OfficeNetwork: 203.0.113.0/24
       MinSize: 2
@@ -72,8 +72,8 @@ stacks:
     # stack name "myDB" on the command line with --force
     locked: true
     enabled: true
-    parameters:
-      << : *vpc_parameters
+    variables:
+      << : *vpc_variables
       InstanceType: db.m3.medium
       AllocatedStorage: 10
       MasterUser: dbuser
@@ -82,14 +82,14 @@ stacks:
       # If the following are uncommented and you set an InternalDomain above
       # in the VPC a CNAME alias of InternalHostname will be setup pointing at
       # the database.
-      #InternalZoneId: vpc::InternalZoneId
-      #InternalZoneName: vpc::InternalZoneName
+      #InternalZoneId: ${vpc::InternalZoneId}
+      #InternalZoneName: ${vpc::InternalZoneName}
       #InternalHostname: mydb
   - name: myWeb
     class_path: stacker_blueprints.asg.AutoscalingGroup
     enabled: true
-    parameters:
-      << : *vpc_parameters
+    variables:
+      << : *vpc_variables
       InstanceType: m3.medium
       ImageName: ubuntu1404
       MinSize: 2

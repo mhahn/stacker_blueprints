@@ -20,17 +20,17 @@ mappings:
       ubuntu1404: ami-5189a661
       bastion: ami-5189a661
 
-vpc_parameters: &vpc_parameters
-  VpcId: vpc::VpcId # parametrs with ::'s in them refer to <stack>::<Output>
-  DefaultSG: vpc::DefaultSG
-  PublicSubnets: vpc::PublicSubnets
-  PrivateSubnets: vpc::PrivateSubnets
-  AvailabilityZones: vpc::AvailabilityZones
+vpc_variables: &vpc_variables
+  VpcId: ${vpc::VpcId} # variables of the form `${<stack>::<Output>}` default to an `output` lookup, ie. `${output <stack>::<Output>}`
+  DefaultSG: ${vpc::DefaultSG}
+  PublicSubnets: ${vpc::PublicSubnets}
+  PrivateSubnets: ${vpc::PrivateSubnets}
+  AvailabilityZones: ${vpc::AvailabilityZones}
 
 stacks:
   - name: vpc
     class_path: stacker_blueprints.vpc.VPC
-    parameters:
+    variables:
       # AZCount is the # of AvailabilityZones to attempt to build in. You
       # should build in as many as you can afford in order to provide for
       # better fault tolerance. Note: Since this is all done in a VPC, you
@@ -52,16 +52,16 @@ stacks:
       ImageName: NAT
   - name: postgresMaster
     class_path: stacker_blueprints.rds.postgres.MasterInstance
-    parameters:
-      << : *vpc_parameters
-      Subnets: vpc::PrivateSubnets
+    variables:
+      << : *vpc_variables
+      Subnets: ${vpc::PrivateSubnets}
       InstanceType: ${db_instance_type}
       AllowMajorVersionUpgrade: "false"
       AutoMinorVersionUpgrade: "true"
       AllocatedStorage: ${storage_size}
       IOPS: ${iops}
-      InternalZoneName: vpc::InternalZoneName
-      InternalZoneId: vpc::InternalZoneId
+      InternalZoneName: ${vpc::InternalZoneName}
+      InternalZoneId: ${vpc::InternalZoneId}
       InternalHostname: ${master_name}
       DBInstanceIdentifier: ${master_name}
       DBFamily: ${db_family}
@@ -75,16 +75,16 @@ stacks:
       MultiAZ: "true"
   - name: postgresSlave
     class_path: stacker_blueprints.rds.postgres.ReadReplica
-    parameters:
-      << : *vpc_parameters
-      Subnets: vpc::PrivateSubnets
+    variables:
+      << : *vpc_variables
+      Subnets: ${vpc::PrivateSubnets}
       InstanceType: ${db_instance_type}
       AllowMajorVersionUpgrade: "false"
       AutoMinorVersionUpgrade: "true"
       AllocatedStorage: ${storage_size}
       IOPS: ${iops}
-      InternalZoneName: vpc::InternalZoneName
-      InternalZoneId: vpc::InternalZoneId
+      InternalZoneName: ${vpc::InternalZoneName}
+      InternalZoneId: ${vpc::InternalZoneId}
       InternalHostname: ${slave_name}
       DBInstanceIdentifier: ${slave_name}
       DBFamily: ${db_family}
@@ -92,4 +92,4 @@ stacks:
       EngineMajorVersion: ${engine_major_version}
       StorageEncrypted: ${slave_storage_encrypted}
       # ReadReplica Specific
-      MasterDatabaseId: postgresMaster::DBInstance
+      MasterDatabaseId: ${postgresMaster::DBInstance}
