@@ -258,7 +258,8 @@ class Snapshot(Blueprint):
     def get_emr_cluster_object_fields(self):
         variables = self.get_variables()
         bootstrap_action = (
-            "s3://#{myRegion}.elasticmapreduce/bootstrap-actions/configure-hadoop,"
+            "s3://#{myRegion}.elasticmapreduce/bootstrap-actions/"
+            "configure-hadoop,"
             " --yarn-key-value,yarn.nodemanager.resource.memory-mb=11520,"
             "--yarn-key-value,yarn.scheduler.maximum-allocation-mb=11520,"
             "--yarn-key-value,yarn.scheduler.minimum-allocation-mb=1440,"
