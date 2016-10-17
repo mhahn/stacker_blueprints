@@ -7,7 +7,7 @@ from troposphere import (
     Output,
 )
 
-from . import util
+from .. import util
 
 MAX_GSI_VALUE = 5
 MAX_LSI_VALUE = 5
